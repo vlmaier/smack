@@ -7,7 +7,10 @@ import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -34,6 +37,7 @@ class MainActivity : AppCompatActivity() {
         )
         drawer_layout.addDrawerListener(toggle)
         toggle.syncState()
+        hideKeyboard()
 
         LocalBroadcastManager.getInstance(this).registerReceiver(userDataChangeReceiver, IntentFilter(BROADCAST_USER_DATA_CHANGE))
     }
@@ -77,9 +81,34 @@ class MainActivity : AppCompatActivity() {
 
     fun addChannelButtonClicked(view: View) {
 
+        if (AuthService.isLoggedIn) {
+            val builder = AlertDialog.Builder(this)
+            val dialogView = layoutInflater.inflate(R.layout.add_channel_dialog, null)
+
+            builder.setView(dialogView)
+                .setPositiveButton("Add") { dialogInterface, i ->
+                    hideKeyboard()
+                    val nameTextField = dialogView.findViewById<EditText>(R.id.addChannelNameText)
+                    val descTextField = dialogView.findViewById<EditText>(R.id.addChannelDescriptionText)
+                    val channelName = nameTextField.text.toString()
+                    val channelDesc = descTextField.text.toString()
+                }
+                .setNegativeButton("Cancel") { dialogInterface, i ->
+                    hideKeyboard()
+                }
+                .show()
+        }
     }
 
     fun sendMessageButtonClicked(view: View) {
 
+    }
+
+    private fun hideKeyboard() {
+
+        val inputManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        if (inputManager.isAcceptingText) {
+            inputManager.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+        }
     }
 }
