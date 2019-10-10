@@ -109,7 +109,6 @@ object AuthService {
             }
 
             override fun getHeaders(): MutableMap<String, String> {
-
                 val headers = HashMap<String, String>()
                 headers.put("Authorization", "Bearer $authToken")
                 return headers
@@ -145,7 +144,6 @@ object AuthService {
             }
 
             override fun getHeaders(): MutableMap<String, String> {
-
                 val headers = HashMap<String, String>()
                 headers.put("Authorization", "Bearer $authToken")
                 return headers
