@@ -11,7 +11,8 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:networkSecurityConfig="@xml/network_security_config">
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:name=".controller.App">
         <activity android:name=".controller.CreateUserActivity"></activity>
         <activity android:name=".controller.LoginActivity" />
         <activity

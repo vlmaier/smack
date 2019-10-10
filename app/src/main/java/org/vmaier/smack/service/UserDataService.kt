@@ -1,6 +1,7 @@
 package org.vmaier.smack.service
 
 import android.graphics.Color
+import org.vmaier.smack.controller.App
 import java.util.*
 
 
@@ -40,8 +41,8 @@ object UserDataService {
         avatarColor = ""
         email = ""
         name = ""
-        AuthService.authToken = ""
-        AuthService.userEmail = ""
-        AuthService.isLoggedIn = false
+        App.prefs.authToken = ""
+        App.prefs.userEmail = ""
+        App.prefs.isLoggedIn = false
     }
 }

@@ -6,8 +6,10 @@ import com.android.volley.Response
 import com.android.volley.toolbox.JsonArrayRequest
 import com.android.volley.toolbox.Volley
 import org.json.JSONException
+import org.vmaier.smack.controller.App
 import org.vmaier.smack.model.Channel
 import org.vmaier.smack.util.URL_GET_CHANNELS
+
 
 object MessageService {
 
@@ -40,10 +42,10 @@ object MessageService {
 
             override fun getHeaders(): MutableMap<String, String> {
                 val headers = HashMap<String, String>()
-                headers.put("Authorization", "Bearer ${AuthService.authToken}")
+                headers.put("Authorization", "Bearer ${App.prefs.authToken}")
                 return headers
             }
         }
-        Volley.newRequestQueue(context).add(getChannelsRequest)
+        App.prefs.requestQueue.add(getChannelsRequest)
     }
 }
