@@ -29,7 +29,7 @@ class LoginActivity : AppCompatActivity() {
         val password = loginPasswordText.text.toString()
 
         if (email.isNotEmpty() && password.isNotEmpty()) {
-            AuthService.loginUser(this, email, password) { loginSuccessful ->
+            AuthService.loginUser(email, password) { loginSuccessful ->
                 if (loginSuccessful) {
                     AuthService.findUserByEmail(this) { findUserSuccessful ->
                         if (findUserSuccessful) {

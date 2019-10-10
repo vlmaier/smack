@@ -4,6 +4,7 @@ import android.content.*
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -11,13 +12,17 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.github.nkzawa.emitter.Emitter
 import com.github.nkzawa.socketio.client.IO
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.app_bar_main.*
+import kotlinx.android.synthetic.main.content_main.*
 import kotlinx.android.synthetic.main.nav_header_main.*
 import org.vmaier.smack.R
+import org.vmaier.smack.adapters.MessageAdapter
 import org.vmaier.smack.model.Channel
+import org.vmaier.smack.model.Message
 import org.vmaier.smack.service.AuthService
 import org.vmaier.smack.service.MessageService
 import org.vmaier.smack.service.UserDataService
@@ -29,10 +34,18 @@ class MainActivity : AppCompatActivity() {
 
     private val socket = IO.socket(SOCKET_URL)
     lateinit var channelAdapter: ArrayAdapter<Channel>
+    lateinit var messageAdapter: MessageAdapter
+    var selectedChannel: Channel? = null
 
     private fun setupAdapters() {
+
         channelAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, MessageService.channels)
         channel_list.adapter = channelAdapter
+
+        messageAdapter = MessageAdapter(this, MessageService.messages)
+        message_list.adapter = messageAdapter
+        val layoutManager = LinearLayoutManager(this)
+        message_list.layoutManager = layoutManager
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +54,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
+        socket.connect()
+        socket.on("channelCreated", onNewChannel)
+        socket.on("messageCreated", onNewMessage)
+
         val toggle = ActionBarDrawerToggle(this, drawer_layout, toolbar,
             R.string.navigation_drawer_open,
             R.string.navigation_drawer_close
@@ -48,8 +65,12 @@ class MainActivity : AppCompatActivity() {
         drawer_layout.addDrawerListener(toggle)
         toggle.syncState()
         setupAdapters()
-        socket.connect()
-        socket.on("channelCreated", onNewChannel)
+
+        channel_list.setOnItemClickListener { _, view, i, l ->
+            selectedChannel = MessageService.channels.get(i)
+            drawer_layout.closeDrawer(GravityCompat.START)
+            updateWithChannel()
+        }
 
         if (App.prefs.isLoggedIn) {
             AuthService.findUserByEmail(this) {}
@@ -81,9 +102,28 @@ class MainActivity : AppCompatActivity() {
                 userAvatarNavHeader.setBackgroundColor(UserDataService.getAvatarColor(UserDataService.avatarColor))
                 loginButtonNavHeader.text = "Logout"
 
-                MessageService.getChannels(context) { complete ->
+                MessageService.getChannels { complete ->
                     if (complete) {
-                        channelAdapter.notifyDataSetChanged()
+                        if (MessageService.channels.count() > 0) {
+                            selectedChannel = MessageService.channels.get(0)
+                            channelAdapter.notifyDataSetChanged()
+                            updateWithChannel()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun updateWithChannel() {
+
+        mainChannelName.text = "#${selectedChannel?.name}"
+        if (selectedChannel != null) {
+            MessageService.getMessages(selectedChannel!!.id) { complete ->
+                if (complete) {
+                    messageAdapter.notifyDataSetChanged()
+                    if (messageAdapter.itemCount > 0) {
+                        message_list.smoothScrollToPosition(messageAdapter.itemCount - 1)
                     }
                 }
             }
@@ -103,6 +143,8 @@ class MainActivity : AppCompatActivity() {
 
         if (App.prefs.isLoggedIn) {
             UserDataService.logout()
+            channelAdapter.notifyDataSetChanged()
+            messageAdapter.notifyDataSetChanged()
             userNameNavHeader.text = ""
             userEmailNavHeader.text = ""
             userAvatarNavHeader.setImageResource(R.drawable.profiledefault)
@@ -121,7 +163,7 @@ class MainActivity : AppCompatActivity() {
             val dialogView = layoutInflater.inflate(R.layout.add_channel_dialog, null)
 
             builder.setView(dialogView)
-                .setPositiveButton("Add") { dialogInterface, i ->
+                .setPositiveButton("Add") { _, _ ->
 
                     val nameTextField = dialogView.findViewById<EditText>(R.id.addChannelNameText)
                     val descTextField = dialogView.findViewById<EditText>(R.id.addChannelDescriptionText)
@@ -130,7 +172,7 @@ class MainActivity : AppCompatActivity() {
 
                     socket.emit("newChannel", channelName, channelDesc)
                 }
-                .setNegativeButton("Cancel") { dialogInterface, i ->
+                .setNegativeButton("Cancel") { _, _ ->
 
                 }
                 .show()
@@ -139,18 +181,60 @@ class MainActivity : AppCompatActivity() {
 
     private val onNewChannel = Emitter.Listener { args ->
 
-        runOnUiThread {
-            val channelName = args[0] as String
-            val channelDesc = args[1] as String
-            val channelId = args[2] as String
+        if (App.prefs.isLoggedIn) {
+            runOnUiThread {
+                val channelName = args[0] as String
+                val channelDesc = args[1] as String
+                val channelId = args[2] as String
 
-            val newChannel = Channel(channelId, channelName, channelDesc)
-            MessageService.channels.add(newChannel)
-            channelAdapter.notifyDataSetChanged()
+                val newChannel = Channel(channelId, channelName, channelDesc)
+                MessageService.channels.add(newChannel)
+                channelAdapter.notifyDataSetChanged()
+            }
+        }
+    }
+
+    private val onNewMessage = Emitter.Listener { args ->
+
+        if (App.prefs.isLoggedIn) {
+            runOnUiThread {
+                val channelId = args[2] as String
+                if (channelId == selectedChannel!!.id) {
+                    val messageBody = args[0] as String
+                    val userName = args[3] as String
+                    val userAvatar = args[4] as String
+                    val userAvatarColor = args[5] as String
+                    val id = args[6] as String
+                    val timestamp = args[7] as String
+
+                    val newMessage = Message(
+                        messageBody, userName, channelId,
+                        userAvatar, userAvatarColor, id, timestamp
+                    )
+                    MessageService.messages.add(newMessage)
+                    messageAdapter.notifyDataSetChanged()
+                    message_list.smoothScrollToPosition(messageAdapter.itemCount - 1)
+                }
+            }
         }
     }
 
     fun sendMessageButtonClicked(view: View) {
 
+        if (App.prefs.isLoggedIn && messageTextField.text.isNotEmpty() && selectedChannel != null) {
+            socket.emit("newMessage", messageTextField.text.toString(),
+                UserDataService.id, selectedChannel!!.id, UserDataService.name,
+                UserDataService.avatarName, UserDataService.avatarColor)
+            messageTextField.text.clear()
+            hideKeyboard()
+        }
+    }
+
+    private fun hideKeyboard() {
+
+        val inputManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        if (inputManager.isAcceptingText) {
+            inputManager.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+        }
     }
 }
