@@ -1,10 +1,12 @@
 package org.vmaier.smack.controller
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import kotlinx.android.synthetic.main.activity_create_user.*
@@ -16,8 +18,8 @@ import java.util.*
 
 class CreateUserActivity : AppCompatActivity() {
 
-    var userAvatar = "profileDefault"
-    var avatarColor = "[0.5, 0.5, 0.5, 1]"
+    private var userAvatar = "profileDefault"
+    private var avatarColor = "[0.5, 0.5, 0.5, 1]"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +60,7 @@ class CreateUserActivity : AppCompatActivity() {
 
     fun createUserButtonClicked(view: View) {
 
+        hideKeyboard()
         enableSpinner(true)
 
         val userName = createUserNameText.text.toString()
@@ -92,13 +95,13 @@ class CreateUserActivity : AppCompatActivity() {
         }
     }
 
-    fun showToast(message: String = "Something went wrong. Please try again.") {
+    private fun showToast(message: String = "Something went wrong. Please try again.") {
 
-        Toast.makeText(this, "Something went wrong. Please try again.", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
         enableSpinner(false)
     }
 
-    fun enableSpinner(enable: Boolean) {
+    private fun enableSpinner(enable: Boolean) {
 
         if (enable) {
             createSpinner.visibility = View.VISIBLE
@@ -108,5 +111,13 @@ class CreateUserActivity : AppCompatActivity() {
         createUserButton.isEnabled = !enable
         createAvatarImageView.isEnabled = !enable
         generateBackgroundColorButton.isEnabled = !enable
+    }
+
+    private fun hideKeyboard() {
+
+        val inputManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        if (inputManager.isAcceptingText) {
+            inputManager.hideSoftInputFromWindow(currentFocus?.windowToken, 0)
+        }
     }
 }
