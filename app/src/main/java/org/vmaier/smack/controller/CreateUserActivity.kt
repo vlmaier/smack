@@ -1,10 +1,12 @@
-package org.vmaier.smack
+package org.vmaier.smack.controller
 
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import kotlinx.android.synthetic.main.activity_create_user.*
+import org.vmaier.smack.R
+import org.vmaier.smack.service.AuthService
 import java.util.*
 
 
@@ -51,5 +53,22 @@ class CreateUserActivity : AppCompatActivity() {
 
     fun createUserButtonClicked(view: View) {
 
+        val userName = createUserNameText.text.toString()
+        val email = createEmailText.text.toString()
+        val password = createPasswordText.text.toString()
+
+        AuthService.registerUser(this, email, password) { registrationSuccessful ->
+            if (registrationSuccessful) {
+                AuthService.loginUser(this, email, password) { loginSuccessful ->
+                    if (loginSuccessful) {
+                        AuthService.createUser(this, userName, email, userAvatar, avatarColor) { userCreationSuccessful ->
+                            if (userCreationSuccessful) {
+                                finish()
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -1,9 +1,10 @@
-package org.vmaier.smack
+package org.vmaier.smack.controller
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
+import org.vmaier.smack.R
 
 
 class LoginActivity : AppCompatActivity() {
