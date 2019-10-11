@@ -43,9 +43,9 @@ class MainActivity : AppCompatActivity() {
         channel_list.adapter = channelAdapter
 
         messageAdapter = MessageAdapter(this, MessageService.messages)
-        message_list.adapter = messageAdapter
         val layoutManager = LinearLayoutManager(this)
         message_list.layoutManager = layoutManager
+        message_list.adapter = messageAdapter
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,6 +66,8 @@ class MainActivity : AppCompatActivity() {
         toggle.syncState()
         setupAdapters()
 
+        LocalBroadcastManager.getInstance(this).registerReceiver(userDataChangeReceiver, IntentFilter(BROADCAST_USER_DATA_CHANGE))
+
         channel_list.setOnItemClickListener { _, view, i, l ->
             selectedChannel = MessageService.channels.get(i)
             drawer_layout.closeDrawer(GravityCompat.START)
@@ -77,17 +79,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onResume() {
-
-        LocalBroadcastManager.getInstance(this)
-            .registerReceiver(userDataChangeReceiver, IntentFilter(BROADCAST_USER_DATA_CHANGE))
-        super.onResume()
-    }
-
     override fun onDestroy() {
 
-        LocalBroadcastManager.getInstance(this)
-            .unregisterReceiver(userDataChangeReceiver)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(userDataChangeReceiver)
         socket.disconnect()
         super.onDestroy()
     }
@@ -150,6 +144,7 @@ class MainActivity : AppCompatActivity() {
             userAvatarNavHeader.setImageResource(R.drawable.profiledefault)
             userAvatarNavHeader.setBackgroundColor(Color.TRANSPARENT)
             loginButtonNavHeader.text = "Login"
+            mainChannelName.text = "Please log in"
         } else {
             val loginIntent = Intent(this, LoginActivity::class.java)
             startActivity(loginIntent)
