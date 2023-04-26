@@ -1,3 +1,5 @@
+![](https://github.com/vlmaier/smack-chat/actions/workflows/build.yml/badge.svg)
+
 # smack-chat
 
 It's a demo app project which was created during the Udemy course [Kotlin for Android: Beginner to Advanced](https://www.udemy.com/course/devslopes-android-kotlin/).
